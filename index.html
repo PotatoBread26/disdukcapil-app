@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Layanan Disdukcapil Kota Jambi</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; }
+        
+        /* 1. DESAIN HEADER PORTAL (Tombol Bergeser ke Kiri) */
+        .header-portal { background-color: #0056b3; padding: 15px 20px; display: flex; align-items: center; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 20px; }
+        .header-kiri { font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        
+        /* Wadah tombol navigasi sekarang sejajar dengan judul */
+        .grup-navigasi { display: flex; align-items: center; gap: 10px; }
+
+        /* 2. TOMBOL NAVIGASI */
+        .btn-nav { background: none; border: none; color: white; font-size: 15px; font-weight: bold; cursor: pointer; padding: 10px 15px; border-radius: 5px; transition: 0.2s; }
+        .btn-nav:hover, .btn-nav.aktif { background-color: rgba(255,255,255,0.2); }
+
+        /* 3. MENU MELAYANG (FLOATING DROPDOWN) */
+        .wadah-dropdown { position: relative; display: inline-block; }
+        .isi-dropdown { display: none; position: absolute; left: 0; /* Menu muncul ke bawah sejajar tombol */ background-color: white; min-width: 350px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 200; border-radius: 8px; overflow: hidden; margin-top: 10px; border: 1px solid #ddd; max-height: 70vh; overflow-y: auto; }
+        .isi-dropdown a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #f1f1f1; transition: 0.2s; }
+        .isi-dropdown a:last-child { border-bottom: none; }
+        .isi-dropdown a:hover { background-color: #f0f8ff; color: #0056b3; font-weight: bold; padding-left: 20px; }
+        .tampil-menu { display: block; }
+
+        /* 4. KONTEN HALAMAN */
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #333; font-size: 20px; margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
+        
+        /* 5. HALAMAN BERANDA */
+        .hero-beranda { text-align: center; padding: 30px 10px; }
+        .hero-beranda h1 { color: #0056b3; font-size: 24px; margin-bottom: 10px; }
+        .hero-beranda p { font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 20px; }
+        .info-box { background: #e9ecef; padding: 15px; border-left: 5px solid #28a745; border-radius: 5px; text-align: left; font-size: 14px; color: #333; line-height: 1.5; }
+
+        /* 6. FORM & INPUT */
+        .grup-input { margin-bottom: 15px; }
+        .label-teks { font-weight: bold; display: block; margin-bottom: 5px; font-size: 14px; color: #333; }
+        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; background-color: #fafafa; }
+        input[type="text"]:focus { outline: none; border-color: #0056b3; background-color: #fff; }
+        label.judul-seksi { font-weight: bold; margin-top: 25px; display: block; font-size: 15px; background: #e9ecef; padding: 8px 10px; border-left: 4px solid #0056b3; border-radius: 3px; }
+        
+        /* 7. GRID LAYANAN */
+        .kotak-layanan { border: 1px solid #ccc; border-radius: 5px; padding: 15px; background: #fff; margin-top: 10px; }
+        .grid-kategori { display: grid; gap: 20px; grid-template-columns: repeat(1, 1fr); }
+        @media (min-width: 600px) { .grid-kategori { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 800px) { .grid-kategori { grid-template-columns: repeat(4, 1fr); } }
+        .grid-syarat { display: grid; gap: 15px; grid-template-columns: repeat(1, 1fr); }
+        @media (min-width: 700px) { .grid-syarat { grid-template-columns: repeat(2, 1fr); } }
+
+        .kategori-item { display: flex; flex-direction: column; }
+        .grup-layanan { font-weight: bold; color: #0056b3; margin-bottom: 8px; font-size: 13px; border-bottom: 2px solid #eee; padding-bottom: 5px; text-align: center; background: #f0f8ff; padding-top: 5px; border-radius: 3px; }
+        .kategori-item label { display: flex; align-items: flex-start; font-size: 12px; margin-bottom: 8px; cursor: pointer; line-height: 1.4; }
+        .kategori-item input[type="checkbox"] { width: auto; margin-right: 8px; margin-top: 2px; transform: scale(1.1); }
+
+        .btn-grup { display: flex; gap: 10px; margin-top: 25px; }
+        button.btn-aksi { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 15px; }
+        #btnUnduh { background-color: #28a745; color: white; }
+        #btnKirim { background-color: #007bff; color: white; }
+        button.btn-aksi:hover { opacity: 0.8; }
+        
+        .segera-hadir { text-align: center; padding: 50px 20px; color: #666; }
+        .segera-hadir h3 { color: #0056b3; margin-bottom: 10px; }
+
+        /* 8. PENYESUAIAN LAYAR HP */
+        @media (max-width: 650px) {
+            .header-portal { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .grup-navigasi { width: 100%; display: flex; gap: 5px; }
+            .isi-dropdown { width: 100%; min-width: 100%; }
+            .btn-nav { font-size: 14px; padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER PORTAL (Tombol Beranda & Formulir di Sebelah Judul) -->
+    <div class="header-portal">
+        <div class="header-kiri">
+            🏛️ Portal Disdukcapil Kota Jambi
+        </div>
+        
+        <div class="grup-navigasi">
+            <button class="btn-nav aktif" id="btn-beranda" onclick="bukaTab('tab-beranda')">Beranda</button>
+            
+            <div class="wadah-dropdown">
+                <button class="btn-nav" id="btn-menu" onclick="toggleMenu(event)">Formulir Layanan ▾</button>
+                <div id="menuFormulir" class="isi-dropdown">
+                    <a href="#" onclick="bukaTab('tab-f102')">F-1.02 - Pendaftaran Peristiwa Kependudukan</a>
+                    <a href="#" onclick="bukaTab('tab-f103')">F-1.03 - Pendaftaran Perpindahan Penduduk</a>
+                    <a href="#" onclick="bukaTab('tab-f104')">F-1.04 - Surat Pernyataan Tidak Memiliki Dokumen</a>
+                    <a href="#" onclick="bukaTab('tab-f105')">F-1.05 - SPTJM Perkawinan/Perceraian Belum Tercatat</a>
+                    <a href="#" onclick="bukaTab('tab-f106')">F-1.06 - Surat Pernyataan Perubahan Elemen Data</a>
+                    <!-- Typo 'DiDalam' telah diperbaiki -->
+                    <a href="#" onclick="bukaTab('tab-f201')">F-2.01 - Pencatatan Sipil Di Dalam Wilayah NKRI</a>
+                    <a href="#" onclick="bukaTab('tab-f203')">F-2.03 - SPTJM Kebenaran Data Kelahiran</a>
+                    <a href="#" onclick="bukaTab('tab-f204')">F-2.04 - SPTJM Kebenaran Suami Isteri</a>
+                    <a href="#" onclick="bukaTab('tab-f205')">F-2.05 - Surat Keterangan Lahir Mati</a>
+                    <a href="#" onclick="bukaTab('tab-f210')">F-2.10 - Surat Pernyataan Pengakuan Anak</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- HALAMAN: BERANDA -->
+        <div id="tab-beranda" class="card halaman-form">
+            <div class="hero-beranda">
+                <h1>Selamat Datang di Layanan Mandiri</h1>
+                <p>Portal ini mempermudah warga Kota Jambi untuk mengisi formulir administrasi kependudukan dan pencatatan sipil secara digital. Silakan pilih menu <b>Formulir Layanan</b> di atas untuk memulai pengisian.</p>
+                
+                <div class="info-box">
+                    <b>📌 Petunjuk Penggunaan:</b><br>
+                    1. Pilih jenis formulir yang Anda butuhkan melalui menu di atas.<br>
+                    2. Isi data diri dengan lengkap sesuai dengan KTP/KK.<br>
+                    3. Centang jenis layanan dan persyaratan yang telah Anda siapkan.<br>
+                    <!-- Teks instruksi Bagikan telah diperbaiki -->
+                    4. Klik tombol <b>Unduh File</b> untuk menyimpan form, atau <b>Bagikan</b> untuk mengirim form ke perangkat lain atau aplikasi yang tersedia (seperti WhatsApp, Telegram, Email, dll).
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN: FORM F-1.02 -->
+        <div id="tab-f102" class="card halaman-form" style="display: none;">
+            <h2>Form F-1.02 (Pendaftaran Peristiwa Kependudukan)</h2>
+            <form id="formF102">
+                
+                <label class="judul-seksi">A. Identitas Pemohon</label>
+                <div class="kotak-layanan">
+                    <div class="grup-input">
+                        <label for="nama" class="label-teks">Nama Lengkap (Sesuai KTP)</label>
+                        <input type="text" id="nama" placeholder="Cth: BUDI SANTOSO" required>
+                    </div>
+                    <div class="grup-input">
+                        <label for="nik" class="label-teks">NIK (16 Digit)</label>
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" id="nik" placeholder="Cth: 1571xxxxxxxxxxxx" required>
+                    </div>
+                    <div class="grup-input">
+                        <label for="no_kk" class="label-teks">Nomor Kartu Keluarga</label>
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" id="no_kk" placeholder="Cth: 1571xxxxxxxxxxxx" required>
+                    </div>
+                    <div class="grup-input">
+                        <label for="no_hp" class="label-teks">Nomor HP / WA Aktif</label>
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" id="no_hp" placeholder="Cth: 08xxxxxxxxxx" required>
+                    </div>
+                </div>
+
+                <label class="judul-seksi">B. Jenis Layanan (Pilih lebih dari satu)</label>
+                <div class="kotak-layanan">
+                    <div class="grid-kategori">
+                        <div class="kategori-item">
+                            <div class="grup-layanan">I. KARTU KELUARGA (KK)</div>
+                            <label><input type="checkbox" name="layanan" value="E15"> Membentuk Keluarga Baru</label>
+                            <label><input type="checkbox" name="layanan" value="E16"> Ganti Kepala Keluarga</label>
+                            <label><input type="checkbox" name="layanan" value="E17"> Pisah KK</label>
+                            <label><input type="checkbox" name="layanan" value="E18"> Pindah Datang</label>
+                            <label><input type="checkbox" name="layanan" value="E19"> WNI dari Luar Negeri</label>
+                            <label><input type="checkbox" name="layanan" value="E20"> Rentan Adminduk</label>
+                            <div style="font-weight:bold; font-size:12px; margin-top:8px; color:#555;">Pembaruan/Cetak:</div>
+                            <label><input type="checkbox" name="layanan" value="E22"> Menumpang di KK Lain</label>
+                            <label><input type="checkbox" name="layanan" value="E23"> Ada Peristiwa Penting</label>
+                            <label><input type="checkbox" name="layanan" value="E24"> Ubah Elemen Data</label>
+                            <label><input type="checkbox" name="layanan" value="E26"> KK Hilang</label>
+                            <label><input type="checkbox" name="layanan" value="E27"> KK Rusak</label>
+                        </div>
+                        <div class="kategori-item">
+                            <div class="grup-layanan">II. KTP-EL</div>
+                            <label><input type="checkbox" name="layanan" value="I14"> Cetak Baru (Pemula)</label>
+                            <label><input type="checkbox" name="layanan" value="I15"> Pindah Datang</label>
+                            <label><input type="checkbox" name="layanan" value="I17"> KTP Hilang</label>
+                            <label><input type="checkbox" name="layanan" value="I18"> KTP Rusak</label>
+                            <label><input type="checkbox" name="layanan" value="I19"> Perpanjangan ITAP</label>
+                            <label><input type="checkbox" name="layanan" value="I20"> Ubah Kewarganegaraan</label>
+                            <label><input type="checkbox" name="layanan" value="I22"> Rekam Luar Domisili</label>
+                            <label><input type="checkbox" name="layanan" value="I23"> Transmigrasi</label>
+                        </div>
+                        <div class="kategori-item">
+                            <div class="grup-layanan">III. KIA (Anak)</div>
+                            <label><input type="checkbox" name="layanan" value="M14"> Cetak KIA Baru</label>
+                            <label><input type="checkbox" name="layanan" value="M16"> KIA Hilang</label>
+                            <label><input type="checkbox" name="layanan" value="M17"> KIA Rusak</label>
+                            <label><input type="checkbox" name="layanan" value="M18"> Perpanjangan ITAP</label>
+                            <label><input type="checkbox" name="layanan" value="M19"> Keperluan Lainnya</label>
+                        </div>
+                        <div class="kategori-item">
+                            <div class="grup-layanan">IV. PERUBAHAN DATA</div>
+                            <label><input type="checkbox" name="layanan" value="P14"> Perubahan Data KK</label>
+                            <label><input type="checkbox" name="layanan" value="P15"> Perubahan Data KTP-EL</label>
+                            <label><input type="checkbox" name="layanan" value="P16"> Perubahan Data KIA</label>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="judul-seksi">C. Persyaratan yang Dilampirkan</label>
+                <div class="kotak-layanan">
+                    <div class="grid-syarat">
+                        <div class="kategori-item">
+                            <label><input type="checkbox" name="syarat" value="C30"> KK Lama / KK Rusak</label>
+                            <label><input type="checkbox" name="syarat" value="C31"> Buku Nikah / Akta Perkawinan</label>
+                            <label><input type="checkbox" name="syarat" value="C32"> Kutipan Akta Perceraian</label>
+                            <label><input type="checkbox" name="syarat" value="C33"> Surat Keterangan Pindah</label>
+                            <label><input type="checkbox" name="syarat" value="C34"> Surat Ket. Pindah Luar Negeri</label>
+                            <label><input type="checkbox" name="syarat" value="C35"> KTP-EL Rusak</label>
+                            <label><input type="checkbox" name="syarat" value="C36"> Dokumen Perjalanan</label>
+                            <label><input type="checkbox" name="syarat" value="C37"> Surat Ket. Hilang dari Kepolisian</label>
+                        </div>
+                        <div class="kategori-item">
+                            <label><input type="checkbox" name="syarat" value="I30,I31"> Bukti Perubahan Peristiwa Kependudukan</label>
+                            <label><input type="checkbox" name="syarat" value="I32"> SPTJM Perkawinan Belum Tercatat</label>
+                            <label><input type="checkbox" name="syarat" value="I33"> Akta Kematian</label>
+                            <label><input type="checkbox" name="syarat" value="I34"> Pernyataan Penyebab Hilang/Rusak</label>
+                            <label><input type="checkbox" name="syarat" value="I35"> Surat Ket. Pindah dari Perwakilan RI</label>
+                            <label><input type="checkbox" name="syarat" value="I36"> Pernyataan Menerima Anggota Keluarga</label>
+                            <label><input type="checkbox" name="syarat" value="I37"> Surat Kuasa Pengasuh Anak/Wali</label>
+                            <label><input type="checkbox" name="syarat" value="I38"> Kartu Izin Tinggal Tetap</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-grup">
+                    <button type="button" id="btnUnduh" class="btn-aksi">Unduh File</button>
+                    <button type="button" id="btnKirim" class="btn-aksi">Bagikan</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- HALAMAN COMING SOON UNTUK FORM LAINNYA -->
+        <div id="tab-f103" class="card halaman-form" style="display: none;">
+            <div class="segera-hadir"><h3>🚧 F-1.03 Sedang Disiapkan</h3><p>Modul Pendaftaran Perpindahan Penduduk dalam tahap integrasi.</p></div>
+        </div>
+        <div id="tab-f104" class="card halaman-form" style="display: none;">
+            <div class="segera-hadir"><h3>🚧 F-1.04 Sedang Disiapkan</h3><p>Modul Surat Pernyataan Tidak Memiliki Dokumen sedang dibangun.</p></div>
+        </div>
+        <div id="tab-f105" class="card halaman-form" style="display: none;">
+            <div class="segera-hadir"><h3>🚧 F-1.05 Sedang Disiapkan</h3><p>Modul SPTJM Perkawinan/Perceraian Belum Tercatat sedang dihubungkan.</p></div>
+        </div>
+        <div id="tab-f106" class="card halaman-form" style="display: none;">
+            <div class="segera-hadir"><h3>🚧 F-1.06 Sedang Disiapkan</h3><p>Modul Surat Pernyataan Perubahan Elemen Data segera hadir.</p></div>
+        </div>
+        <div id="tab-f201" class="card halaman-form" style="display: none;">
+            <div class="segera-hadir"><h3>🚧 F-2.01 Sedang Disiapkan</h3><p>Modul Pelaporan Pencatatan Sipil Di Dalam Wilayah NKRI sedang dibuat.</p></div>
+        </div>
+        <div id="tab-f203" class="card halaman-form" style="display: none;">
+            <div class="segera-hadir"><h3>🚧 F-2.03 Sedang Disiapkan</h3><p>Modul SPTJM Kebenaran Data Kelahiran segera hadir.</p></div>
+        </div>
+        <div id="tab-f204" class="card halaman-form" style="display: none;">
+            <div class="segera-hadir"><h3>🚧 F-2.04 Sedang Disiapkan</h3><p>Modul SPTJM Kebenaran Suami Isteri segera hadir.</p></div>
+        </div>
+        <div id="tab-f205" class="card halaman-form" style="display: none;">
+            <div class="segera-hadir"><h3>🚧 F-2.05 Sedang Disiapkan</h3><p>Modul Surat Keterangan Lahir Mati sedang disiapkan.</p></div>
+        </div>
+        <div id="tab-f210" class="card halaman-form" style="display: none;">
+            <div class="segera-hadir"><h3>🚧 F-2.10 Sedang Disiapkan</h3><p>Modul Surat Pernyataan Pengakuan Anak sedang disiapkan.</p></div>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleMenu(event) {
+            event.stopPropagation();
+            document.getElementById("menuFormulir").classList.toggle("tampil-menu");
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('#btn-menu')) {
+                var dropdowns = document.getElementsByClassName("isi-dropdown");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('tampil-menu')) {
+                        openDropdown.classList.remove('tampil-menu');
+                    }
+                }
+            }
+        }
+
+        function bukaTab(idTab) {
+            const semuaHalaman = document.querySelectorAll('.halaman-form');
+            semuaHalaman.forEach(hal => hal.style.display = 'none');
+            
+            document.getElementById(idTab).style.display = 'block';
+
+            if(idTab === 'tab-beranda') {
+                document.getElementById('btn-beranda').classList.add('aktif');
+                document.getElementById('btn-menu').classList.remove('aktif');
+            } else {
+                document.getElementById('btn-beranda').classList.remove('aktif');
+                document.getElementById('btn-menu').classList.add('aktif');
+                document.getElementById("menuFormulir").classList.remove("tampil-menu");
+            }
+        }
+
+        async function prosesData() {
+            const checkboxLayanan = document.querySelectorAll('input[name="layanan"]:checked');
+            let arrayLayanan = [];
+            checkboxLayanan.forEach((cb) => arrayLayanan.push(cb.value));
+
+            const checkboxSyarat = document.querySelectorAll('input[name="syarat"]:checked');
+            let arraySyarat = [];
+            checkboxSyarat.forEach((cb) => arraySyarat.push(cb.value));
+
+            if(arrayLayanan.length === 0) {
+                alert("Mohon centang minimal satu Jenis Layanan.");
+                return null;
+            }
+
+            const dataForm = {
+                nama: document.getElementById('nama').value,
+                nik: document.getElementById('nik').value,
+                no_kk: document.getElementById('no_kk').value,
+                no_hp: document.getElementById('no_hp').value,
+                jenis_permohonan: arrayLayanan.join(','),
+                persyaratan: arraySyarat.join(',')
+            };
+
+            if(!dataForm.nama || !dataForm.nik) {
+                alert("Mohon isi Nama dan NIK terlebih dahulu.");
+                return null;
+            }
+
+            try {
+                const response = await fetch('/generate-f102', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataForm)
+                });
+                return await response.blob();
+            } catch (error) {
+                alert("Koneksi gagal. Coba lagi.");
+                return null;
+            }
+        }
+
+        document.getElementById('btnUnduh').addEventListener('click', async function(e) {
+            e.preventDefault();
+            this.innerText = "Memproses...";
+            const blobFile = await prosesData();
+            
+            if (blobFile) {
+                const nama = document.getElementById('nama').value;
+                const url = window.URL.createObjectURL(blobFile);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `F102_${nama}.xlsx`;
+                a.click();
+            }
+            this.innerText = "Unduh File";
+        });
+
+        document.getElementById('btnKirim').addEventListener('click', async function(e) {
+            e.preventDefault();
+            this.innerText = "Membuka Menu...";
+            const blobFile = await prosesData();
+
+            if (blobFile) {
+                const nama = document.getElementById('nama').value;
+                const file = new File([blobFile], `F102_${nama}.xlsx`, {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Formulir F-1.02 Disdukcapil',
+                            text: `Berikut adalah isian formulir F-1.02 atas nama ${nama}`
+                        });
+                    } catch (err) {
+                        console.log("Membatalkan share.");
+                    }
+                } else {
+                    alert("Perangkat Anda tidak mendukung fitur kirim langsung. Silakan klik tombol 'Unduh File'.");
+                }
+            }
+            this.innerText = "Bagikan";
+        });
+    </script>
+</body>
+</html>
