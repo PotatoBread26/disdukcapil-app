@@ -10,11 +10,12 @@ app = FastAPI(title="SmartKeu API Disdukcapil")
 def get_db_connection():
     return pymysql.connect(
         host=os.getenv("DB_HOST", "gateway01.ap-southeast-1.prod.aws.tidbcloud.com"),
-        port=int(os.getenv("DB_PORT", 4000)),
-        user=os.getenv("DB_USER", "3vYlC1T5sM5qg9e.root"),
-        password=os.getenv("DB_PASSWORD", "Radeon56809!"),
-        database=os.getenv("DB_NAME", "disdukcapil"),
-        ssl={"ca": "/etc/ssl/certs/ca-certificates.crt"} if os.path.exists("/etc/ssl/certs/ca-certificates.crt") else None,
+        user=os.getenv("DB_USER", "3wBpS3scrfrCKAt.root"),
+        password=os.getenv("DB_PASSWORD", "3ameYZRafnPO2sQT"),
+        database=os.getenv("DB_NAME", "SmartKeuDB"),
+        port=4000, #[cite: 14]
+        ssl_verify_cert=True, 
+        ssl_verify_identity=True,
         cursorclass=pymysql.cursors.DictCursor
     )
 
