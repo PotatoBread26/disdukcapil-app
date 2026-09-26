@@ -42,6 +42,17 @@ class PegawaiModel(BaseModel):
 def root():
     return {"status": "success", "message": "SmartKeu API is running!"}
 
+
+@app.get("/api/check-users")
+def check_users():
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, username, password, role FROM users")
+            return cursor.fetchall()
+    finally:
+        connection.close()
+
 # --------------------------
 # ENDPOINT LOGIN
 # --------------------------
