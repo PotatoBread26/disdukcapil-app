@@ -1,76 +1,136 @@
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
-from datetime import datetime
-import openpyxl
-from openpyxl.styles import Alignment
-import io
+import pymysql
+import os
+from typing import Optional
+from dotenv import load_dotenv
 
-app = FastAPI()
+# Load kredensial dari .env (lokal) atau Environment Variables (Render)
+load_dotenv()
 
-class DataWarga(BaseModel):
-    nama: str
-    nik: str
-    no_kk: str
-    no_hp: str
-    jenis_permohonan: str
-    persyaratan: str = ""
+app = FastAPI(title="SmartKeu API Backend")
 
-@app.get("/", response_class=HTMLResponse)
-async def baca_halaman_web():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return f.read()
-
-@app.post("/generate-f102")
-async def generate_excel(data: DataWarga):
-    nama_file_template = "F-1.02 - Formulir Pendaftaran Peristiwa Kependudukan.xlsx"
-    wb = openpyxl.load_workbook(nama_file_template)
-    ws = wb.active
-
-    # 1. Mengisi Data Diri
-    ws['F5'] = data.nama
-    ws['F6'] = data.nik
-    ws['F7'] = data.no_kk
-    ws['F8'] = data.no_hp
-
-    # 2. Logika Centang Jenis Permohonan
-    if data.jenis_permohonan:
-        sel_centang = data.jenis_permohonan.split(",")
-        for sel in sel_centang:
-            if sel.strip():
-                ws[sel.strip()] = '✔'
-
-    # 3. Logika Centang Persyaratan Lampiran
-    if data.persyaratan:
-        sel_syarat = data.persyaratan.split(",")
-        for sel in sel_syarat:
-            if sel.strip():
-                ws[sel.strip()] = '✔'
-
-    # 4. Format Tanggal Otomatis (Rata Tengah)
-    bulan_indo = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-                  "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-    tgl_sekarang = datetime.now()
-    teks_tanggal = f"Jambi, {tgl_sekarang.day} {bulan_indo[tgl_sekarang.month]} {tgl_sekarang.year}"
-    
-    ws['K41'] = None
-    ws['L41'] = teks_tanggal
-    ws['L41'].alignment = Alignment(horizontal='center')
-
-    # 5. Menaruh Nama Pemohon (Rata Tengah)
-    ws['D46'] = data.nama
-    ws['D46'].alignment = Alignment(horizontal='center')
-
-    # Simpan dan kirim ke browser
-    virtual_file = io.BytesIO()
-    wb.save(virtual_file)
-    virtual_file.seek(0)
-
-    headers = {
-        'Content-Disposition': f'attachment; filename="F102_{data.nama}.xlsx"'
-    }
-    return StreamingResponse(
-        virtual_file, 
-        headers=headers, 
-        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+def get_db_connection():
+    return pymysql.connect(
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT", 4000)),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASS"),
+        database=os.getenv("DB_NAME"),
+        cursorclass=pymysql.cursors.DictCursor
     )
+
+# --------------------------
+# SCHEMAS (PAYLOAD MODEL)
+# --------------------------
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class PegawaiModel(BaseModel):
+    nip: str
+    nama: str
+    status_kepegawaian: str
+    pangkat: str
+    golongan: str
+    tingkat_perjadin: str
+
+# --------------------------
+# ENDPOINT TEST ROOT
+# --------------------------
+@app.get("/")
+def root():
+    return {"status": "success", "message": "SmartKeu API is running!"}
+
+# --------------------------
+# ENDPOINT LOGIN
+# --------------------------
+@app.post("/api/login")
+def login(request: LoginRequest):
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE username = %s LIMIT 1", (request.username,))
+            user_data = cursor.fetchone()
+
+        if not user_data:
+            raise HTTPException(status_code=401, detail="Username atau Password salah")
+
+        db_password = user_data.get("password")
+        if request.password == db_password:
+            return {"status": "success", "user": user_data}
+        else:
+            raise HTTPException(status_code=401, detail="Username atau Password salah")
+    finally:
+        connection.close()
+
+# --------------------------
+# ENDPOINT PEGAWAI
+# --------------------------
+@app.get("/api/pegawai")
+def get_pegawai(status: Optional[str] = Query(None)):
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            if status and status != "Semua Pegawai":
+                cursor.execute("SELECT * FROM pegawai WHERE status_kepegawaian = %s ORDER BY nama ASC", (status,))
+            else:
+                cursor.execute("SELECT * FROM pegawai ORDER BY nama ASC")
+            pegawai_list = cursor.fetchall()
+            return {"status": "success", "data": pegawai_list}
+    finally:
+        connection.close()
+
+@app.post("/api/pegawai")
+def tambah_pegawai(pegawai: PegawaiModel):
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT nip FROM pegawai WHERE nip = %s", (pegawai.nip,))
+            if cursor.fetchone():
+                raise HTTPException(status_code=400, detail=f"NIP {pegawai.nip} sudah terdaftar!")
+
+            cursor.execute("""
+                INSERT INTO pegawai (nip, nama, status_kepegawaian, pangkat, golongan, tingkat_perjadin)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (pegawai.nip, pegawai.nama, pegawai.status_kepegawaian, pegawai.pangkat, pegawai.golongan, pegawai.tingkat_perjadin))
+            connection.commit()
+            return {"status": "success", "message": "Pegawai berhasil ditambahkan"}
+    finally:
+        connection.close()
+
+@app.put("/api/pegawai/{nip_lama}")
+def update_pegawai(nip_lama: str, pegawai: PegawaiModel):
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            if pegawai.nip != nip_lama:
+                cursor.execute("SELECT nip FROM pegawai WHERE nip = %s", (pegawai.nip,))
+                if cursor.fetchone():
+                    raise HTTPException(status_code=400, detail=f"NIP {pegawai.nip} sudah terdaftar!")
+                
+                cursor.execute("""
+                    INSERT INTO pegawai (nip, nama, status_kepegawaian, pangkat, golongan, tingkat_perjadin)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (pegawai.nip, pegawai.nama, pegawai.status_kepegawaian, pegawai.pangkat, pegawai.golongan, pegawai.tingkat_perjadin))
+                cursor.execute("DELETE FROM pegawai WHERE nip = %s", (nip_lama,))
+            else:
+                cursor.execute("""
+                    UPDATE pegawai SET nama = %s, status_kepegawaian = %s, pangkat = %s, golongan = %s, tingkat_perjadin = %s
+                    WHERE nip = %s
+                """, (pegawai.nama, pegawai.status_kepegawaian, pegawai.pangkat, pegawai.golongan, pegawai.tingkat_perjadin, nip_lama))
+            connection.commit()
+            return {"status": "success", "message": "Data pegawai diperbarui"}
+    finally:
+        connection.close()
+
+@app.delete("/api/pegawai/{nip}")
+def hapus_pegawai(nip: str):
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM pegawai WHERE nip = %s", (nip,))
+            connection.commit()
+            return {"status": "success", "message": "Pegawai berhasil dihapus"}
+    finally:
+        connection.close()
