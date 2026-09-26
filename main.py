@@ -53,15 +53,16 @@ def login(request: LoginRequest):
         clean_pass = request.password.strip()
 
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM users WHERE LOWER(username) = LOWER(%s) LIMIT 1", (clean_user,))
+            # Menggunakan BINARY agar 'SuperAdmin' dan 'superadmin' dianggap 2 username berbeda
+            cursor.execute("SELECT * FROM users WHERE BINARY username = %s LIMIT 1", (clean_user,))
             user_data = cursor.fetchone()
 
         if not user_data:
             raise HTTPException(status_code=401, detail="Username atau Password salah")
 
+        # Perbandingan password persis (case-sensitive)
         db_password = str(user_data.get("password", "")).strip()
         
-        # Validasi password
         if clean_pass == db_password:
             return {"status": "success", "user": user_data}
         else:
