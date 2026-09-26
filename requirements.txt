@@ -1,4 +1,5 @@
 fastapi
 uvicorn
-openpyxl
-pandas
+pymysql
+pydantic
+python-dotenv
