@@ -51,9 +51,15 @@ def login(request: LoginRequest):
         clean_pass = request.password.strip()
 
         with connection.cursor() as cursor:
-            # Gunakan LOWER() agar superadmin, SuperAdmin, maupun SUPERADMIN tetap cocok
             cursor.execute("SELECT * FROM users WHERE LOWER(username) = LOWER(%s) LIMIT 1", (clean_user,))
             user_data = cursor.fetchone()
+
+        # PRINT UNTUK CEK DI LOGS RENDER
+        print(f"[DEBUG LOGIN] User Input: '{clean_user}' | Pass Input: '{clean_pass}'")
+        if user_data:
+            print(f"[DEBUG DB] User DB: '{user_data.get('username')}' | Pass DB: '{user_data.get('password')}'")
+        else:
+            print("[DEBUG DB] User tidak ditemukan di DB!")
 
         if not user_data:
             raise HTTPException(status_code=401, detail="Username atau Password salah")
