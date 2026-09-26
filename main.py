@@ -42,7 +42,9 @@ class PegawaiModel(BaseModel):
 def root():
     return {"status": "success", "message": "SmartKeu API is running!"}
 
-
+# --------------------------
+# ENDPOINT DEBUG USERS
+# --------------------------
 @app.get("/api/check-users")
 def check_users():
     connection = get_db_connection()
@@ -53,6 +55,20 @@ def check_users():
     finally:
         connection.close()
 
+# --------------------------
+# ENDPOINT RESET PASSWORD
+# --------------------------
+@app.get("/api/reset-pass-superadmin")
+def reset_pass_superadmin():
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("UPDATE users SET password = %s WHERE username = 'SuperAdmin'", ("Radeon56809!",))
+            connection.commit()
+            return {"status": "success", "message": "Password SuperAdmin berhasil diubah menjadi Radeon56809!"}
+    finally:
+        connection.close()
+        
 # --------------------------
 # ENDPOINT LOGIN
 # --------------------------
