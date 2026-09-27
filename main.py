@@ -241,8 +241,6 @@ def tambah_bku(item: Dict[str, Any]):
     try:
         with connection.cursor() as cursor:
             pajak_json = json.dumps(item.get("pajak", [])) if isinstance(item.get("pajak"), (list, dict)) else item.get("pajak", "[]")
-            
-            # TAMBAHKAN jenis_transaksi pada query INSERT
             cursor.execute("""
                 INSERT INTO bku (tanggal, dokumen, penerima, uraian, rekening, penerimaan, pengeluaran, keterangan, status_sipd, pajak, jenis_transaksi)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -250,8 +248,7 @@ def tambah_bku(item: Dict[str, Any]):
                 item.get("tanggal"), item.get("dokumen"), item.get("penerima"),
                 item.get("uraian"), item.get("rekening"), item.get("penerimaan", 0.0),
                 item.get("pengeluaran", 0.0), item.get("keterangan"), item.get("status_sipd", "Belum"),
-                pajak_json,
-                item.get("jenis_transaksi", "Umum") # <--- Parameter baru
+                pajak_json, item.get("jenis_transaksi", "Umum")
             ))
             connection.commit()
             return {"status": "success", "message": "BKU berhasil ditambahkan"}
@@ -299,8 +296,6 @@ def bulk_insert_bku(data: List[Dict[str, Any]]):
             cursor.execute("DELETE FROM bku")
             for item in data:
                 pajak_json = json.dumps(item.get("pajak", [])) if isinstance(item.get("pajak"), (list, dict)) else "[]"
-                
-                # TAMBAHKAN jenis_transaksi pada query INSERT BULK
                 cursor.execute("""
                     INSERT INTO bku (tanggal, dokumen, penerima, uraian, rekening, penerimaan, pengeluaran, keterangan, status_sipd, pajak, jenis_transaksi)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -308,8 +303,7 @@ def bulk_insert_bku(data: List[Dict[str, Any]]):
                     item.get("tanggal"), item.get("dokumen"), item.get("penerima"),
                     item.get("uraian"), item.get("rekening"), item.get("penerimaan", 0.0),
                     item.get("pengeluaran", 0.0), item.get("keterangan"), item.get("status_sipd", "Belum"),
-                    pajak_json,
-                    item.get("jenis_transaksi", "Umum") # <--- Parameter baru
+                    pajak_json, item.get("jenis_transaksi", "Umum")
                 ))
             connection.commit()
             return {"status": "success"}
