@@ -204,6 +204,46 @@ def bulk_insert_anggaran(data: List[Dict[str, Any]]):
     finally:
         connection.close()
 
+@app.post("/api/mapping-pptk/bulk")
+def bulk_mapping_pptk(data: List[Dict[str, Any]]):
+    """Simpan mapping rin_code+sub_code → pptk dari RFK."""
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            # Hapus semua dulu (full refresh setiap import RFK)
+            cursor.execute("DELETE FROM mapping_pptk")
+            
+            for item in data:
+                cursor.execute("""
+                    INSERT INTO mapping_pptk 
+                    (rin_code, sub_code, rin_uraian, sub_uraian, pptk)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    item.get("rin_code", ""),
+                    item.get("sub_code", ""),
+                    item.get("rin_uraian", ""),
+                    item.get("sub_uraian", ""),
+                    item.get("pptk", "")
+                ))
+            connection.commit()
+            return {"status": "success", "message": f"{len(data)} mapping tersimpan"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        connection.close()
+
+
+@app.get("/api/mapping-pptk")
+def get_mapping_pptk():
+    """Ambil semua mapping untuk di-cache di frontend."""
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT rin_code, sub_code, rin_uraian, sub_uraian, pptk FROM mapping_pptk")
+            return {"status": "success", "data": cursor.fetchall()}
+    finally:
+        connection.close()
+
 @app.delete("/api/anggaran")
 def delete_all_anggaran():
     connection = get_db_connection()
